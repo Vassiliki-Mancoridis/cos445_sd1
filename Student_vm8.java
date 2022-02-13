@@ -1,11 +1,30 @@
 import java.util.Arrays;
 import java.util.List;
 import java.lang.Math;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class Student_vm8 implements Student {
+   private class SchoolPref implements Comparable<SchoolPref> {
+
+      private int index;
+      private double pref;
+      private boolean listed;
+
+      public SchoolPref(int i, double p) {
+         index = i;
+         pref = p;
+         listed = false;
+      }
+
+      public void setListed(boolean bool) {
+         listed = bool;
+      }
+
+      // sorts based on synergy
+      public int compareTo(SchoolPref n) {
+         int ret = Double.compare(n.pref, pref);
+         return (ret == 0) ? (Integer.compare(index, n.index)) : ret;
+      }
+   }
 
    private class SchoolSynergy implements Comparable<SchoolSynergy> {
         
@@ -45,17 +64,8 @@ public class Student_vm8 implements Student {
       double aptitude, List<Double> schools, List<Double> synergies) {
          int[] ret = new int[10];
 
-         try {
-            Path fileName = Path.of("vikimarina" + Double.+ ".txt");
-            String content  = Double.toString(W * 1.0/T);
-            Files.writeString(fileName, content);
-         } catch(IOException e) {
-         }
-
          // T is smaller -> synergist approach
-         System.out.print("this is w/t: ");
-         System.out.println((W * 1.0/T));
-         if (W > T) {
+         if ((T * 1.0 / W ) < 0.1) {
             // calculate true preferences (synergy plus quality for each u)
             SchoolSynergy[] preferences = new SchoolSynergy[N];
 
@@ -73,7 +83,7 @@ public class Student_vm8 implements Student {
          } 
          
          // In this case, T (quality of universities) is dominant
-         else {
+         else if ((W * 1.0 / T) < 0.1){
             // calculate true preferences (synergy plus quality for each u)
             SchoolQuality[] preferences = new SchoolQuality[N];
 
@@ -102,8 +112,44 @@ public class Student_vm8 implements Student {
                }
                ret[i] = preferences[k].index;
             }
+            return ret;
          }
-         
+
+      // no "dominant strategy"
+      else {
+         // calculate true preferences (synergy plus quality for each u)
+         SchoolPref[] preferences = new SchoolPref[N];
+
+         for (int i = 0; i != schools.size(); ++i) {
+            preferences[i] = new SchoolPref(i, schools.get(i) + synergies.get(i));
+         }
+
+         Arrays.sort(preferences); // schools sorted by quality
+
+         // fill up remaining 9 slots
+          int slotsLeft = 9;
+          int i=0;
+          int retIndex = 0;
+          double p;
+
+          // weighted coin distribution
+
+          while (slotsLeft > 0) {
+              if (i >= N) i=0; // continuously loop through schools until preference list is filled
+             // probability we should apply to school i (our standing for the school)
+             p = (aptitude + synergies.get(preferences[i].index)) / (S + W);
+             // we should apply to school i
+             if (Math.random() < p && preferences[i].listed == false) {
+                ret[retIndex] = preferences[i].index;
+                preferences[i].setListed(true);
+                slotsLeft--;
+                retIndex++;
+             } 
+             // otherwise, we do not apply to school i
+             i++;
+          } 
+          
          return ret;
       }
+   }
 }
