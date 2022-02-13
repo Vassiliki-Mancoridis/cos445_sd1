@@ -65,7 +65,7 @@ public class Student_vm8 implements Student {
          int[] ret = new int[10];
 
          // T is smaller -> synergist approach
-         if ((T * 1.0 / W ) < 0.1) {
+         if ((T * 1.0 / W ) < 0.4) {
             // calculate true preferences (synergy plus quality for each u)
             SchoolSynergy[] preferences = new SchoolSynergy[N];
 
@@ -83,7 +83,7 @@ public class Student_vm8 implements Student {
          } 
          
          // In this case, T (quality of universities) is dominant
-         else if ((W * 1.0 / T) < 0.1){
+         else if ((W * 1.0 / T) < 0.4){
             // calculate true preferences (synergy plus quality for each u)
             SchoolQuality[] preferences = new SchoolQuality[N];
 
@@ -135,9 +135,9 @@ public class Student_vm8 implements Student {
           // weighted coin distribution
 
           while (slotsLeft > 0) {
-              if (i >= N) i=0; // continuously loop through schools until preference list is filled
+              if (i >= N) i= 0; // continuously loop through schools until preference list is filled
              // probability we should apply to school i (our standing for the school)
-             p = (aptitude + synergies.get(preferences[i].index)) / (S + W);
+             p = (1.2) * ((aptitude + synergies.get(preferences[i].index)) / (S + W));
              // we should apply to school i
              if (Math.random() < p && preferences[i].listed == false) {
                 ret[retIndex] = preferences[i].index;
