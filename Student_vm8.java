@@ -1,65 +1,43 @@
-// calculate synergy + quality score of uni's (student's true preferences)
-// for each uni
-    // calculate synergy + quality score
-    
-// sort uni's in order of this score
-
-// keep running number of schools left to apply to, initially numLeft = 9
-// make a placeholder for safety = null;
-// while safety is null, go thru uni's in order of pref
-    // calculate V = E[number of students who would beat us if they applied]
-    // if V == 0, then current uni is favorite safety
-        // safety = uni; 
-    // calculate p = (1-V/N) = prob we "should" apply at this uni
-    // flip a random coin with p = prob of heads
-    // if heads, we apply to this school
-    // decrease numLeft (# schools we will apply to)
-    
-// 
-
-
-/* some sample libraries that we may not need! */
 import java.util.Arrays;
 import java.util.List;
 import java.lang.Math;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Student_vm8 implements Student {
-   private class School implements Comparable<School> {
+
+   private class SchoolSynergy implements Comparable<SchoolSynergy> {
         
-      private int name; // the "name" of the school (which is an int index)
-      private double preference; // students true preference for this school
-      private double rivals; // the "V" score = E[number of students who would beat us if they applied]
-      private boolean haveApplied;
+      private int index;
+      private double synergy;
 
-      public School(int i, double p) {
-         name = i;
-         preference = p;
-         haveApplied = false;
+      public SchoolSynergy(int i, double p) {
+         index = i;
+         synergy = p;
       }
 
-      public void setRivals(double r) {
-          rivals = r;
+      // sorts based on synergy
+      public int compareTo(SchoolSynergy n) {
+         int ret = Double.compare(n.synergy, synergy);
+         return (ret == 0) ? (Integer.compare(index, n.index)) : ret; 
+      }
+   }
+
+   private class SchoolQuality implements Comparable<SchoolQuality> {
+        
+      private int index;
+      private double quality;
+
+      public SchoolQuality(int i, double p) {
+         index = i;
+         quality = p;
       }
 
-      public double getRivals() {
-         return rivals;
-      }
-
-      public int getName() {
-         return name;
-      }
-      
-      public void setHaveApplied(boolean bool) {
-         haveApplied = bool;
-      }
-
-      public boolean getHaveApplied() {
-         return haveApplied;
-      }
-
-      public int compareTo(School n) { // smaller pairs are higher quality
-         int ret = Double.compare(n.preference, preference);
-         return (ret == 0) ? (Integer.compare(name, n.name)) : ret; 
+      // sorts based on synergy
+      public int compareTo(SchoolQuality n) {
+         int ret = Double.compare(n.quality, quality);
+         return (ret == 0) ? (Integer.compare(index, n.index)) : ret; 
       }
    }
 
@@ -67,70 +45,65 @@ public class Student_vm8 implements Student {
       double aptitude, List<Double> schools, List<Double> synergies) {
          int[] ret = new int[10];
 
-         // calculate true preferences (synergy plus quality for each u)
-         School[] preferences = new School[N];
-         for (int i = 0; i < N; i++) {
-            preferences[i] = new School(i, schools.get(i) + synergies.get(i));
+         try {
+            Path fileName = Path.of("vikimarina" + Double.+ ".txt");
+            String content  = Double.toString(W * 1.0/T);
+            Files.writeString(fileName, content);
+         } catch(IOException e) {
          }
-         Arrays.sort(preferences);
-         
-         // calculate percentiles, Vs for each school, find our safety school
-         int safetyIndexPref = -1;
-         double lowestV = Double.POSITIVE_INFINITY;
-         for (int i = 0; i < N; i++) {
-            int schoolName = preferences[i].getName(); // "name" of school in input array (index)
-            double percentile = (synergies.get(schoolName) + aptitude) * 1.0 / (S + W);
-            double v = Math.floor(schools.get(schoolName) * (1.0 / T) * (1 - percentile) * N);
-            if (v < lowestV) {
-               safetyIndexPref = i;
-               lowestV = v;
-            }
-            preferences[i].setRivals(v);
-         }
-         
-         // set that we have applied to our safety
-         ret[9] = preferences[safetyIndexPref].getName();
-         preferences[safetyIndexPref].setHaveApplied(true);
 
-         // fill up remaining 9 slots
-         int slotsLeft = 9;
-         int i=0;
-         int retIndex = 0;
-         double p;
-         
-         // weighted coin distribution
-         
-         while (slotsLeft > 0) {
-             if (i >= N) i=0; // continuously loop through schools until preference list is filled
-            // probability we should apply to school i
-            p = 1.0 - (preferences[i].getRivals() * 1.0 / N);
-            // we should apply to school i
-            if (Math.random() < p && preferences[i].getHaveApplied() == false) {
-               ret[retIndex] = preferences[i].getName();
-               preferences[i].setHaveApplied(true);
-               slotsLeft--;
-               retIndex++;
-            } 
-            // otherwise, we do not apply to school i
-            i++;
+         // T is smaller -> synergist approach
+         System.out.print("this is w/t: ");
+         System.out.println((W * 1.0/T));
+         if (W > T) {
+            // calculate true preferences (synergy plus quality for each u)
+            SchoolSynergy[] preferences = new SchoolSynergy[N];
+
+            for (int i = 0; i != synergies.size(); ++i) {
+               preferences[i] = new SchoolSynergy(i, synergies.get(i));
+            }
+
+            Arrays.sort(preferences); // schools sorted by synergy
+
+            for (int i = 0; i != 10; ++i) {
+               ret[i] = preferences[i].index;
+            }
+            
+            return ret;
          } 
+         
+         // In this case, T (quality of universities) is dominant
+         else {
+            // calculate true preferences (synergy plus quality for each u)
+            SchoolQuality[] preferences = new SchoolQuality[N];
 
-         // 9 schools above our safety school (or below, if there aren't enough above!)         
-         /*
-         int q = 1;
-         for (int j = 0; j < 10; j++) {
-            if (safetyIndexPref + j >= N) {
-               ret[j] = preferences[safetyIndexPref - q].getName();
-               q++;
-            } else {
-               ret[j] = preferences[safetyIndexPref + j].getName();
+            for (int i = 0; i != schools.size(); ++i) {
+               preferences[i] = new SchoolQuality(i, schools.get(i));
+            }
+
+            Arrays.sort(preferences); // schools sorted by quality
+
+            double percentile = (aptitude * 1.0) / S;
+            int guaranteeSchoolNum = (int) Math.floor(N * percentile);
+            ret[9] = preferences[guaranteeSchoolNum].index;
+            int k = guaranteeSchoolNum;
+            boolean goingDown = false;
+            
+            // Assign universities to the output array
+            for (int i = 8; i >= 0; i--) {
+               if (k == N || goingDown == true) {
+                  if (k == N) {
+                     k = guaranteeSchoolNum;
+                     goingDown = true;
+                  }
+                  k = k - 1;
+               } else {
+                  k = k + 1;
+               }
+               ret[i] = preferences[k].index;
             }
          }
-         */
-         // uniform distribution
          
-
-
          return ret;
       }
 }
